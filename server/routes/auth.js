@@ -1,45 +1,38 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const ObjectID = require('mongodb').ObjectID;
 const auth = require('../middleware/auth');
+const User = require('../models/User');
 
 const router = express.Router();
 
-const connectDb = require('../config/db');
+router.get('/user/:id', auth, (req, res) => {
+    const _id = req.params.id;
 
-async function usersCollection() {
-    const connection = await connectDb;
-
-    console.log(`MongoDB (auth): ${connection.topology.s.state}`);
-
-    return connection.db('vue_express').collection('users');
-}
-
-router.get('/user', auth, async (req, res) => {
-    const users = await usersCollection();
-
-    if (!req.user.id)
+    if (!_id) {
         res.status(400).json({
             success: false,
             msg: 'Please provide an ID',
         });
+    }
 
-    const user = await users
-        .find({ _id: ObjectID(req.user.id) })
+    User.findById(_id)
         // All fields except password
-        .project({ password: 0 })
-        .toArray()
-        .then(() => {
-            if (!user)
+        .select('_id name email created_at')
+        .then(user => {
+            if (!user) {
                 return res.status(404).json({
                     success: false,
                     msg: 'User does not exist',
                 });
+            }
 
             res.json({ success: true, user });
         })
         .catch(err => {
+            console.error(err);
+
             res.status(500).json({
                 success: false,
                 msg: 'Unable to fetch user',
@@ -49,9 +42,7 @@ router.get('/user', auth, async (req, res) => {
 });
 
 // Login user
-router.post('/login', async (req, res) => {
-    const users = await usersCollection();
-
+router.post('/login', (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -62,8 +53,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Check for existing user
-    users
-        .findOne({ email })
+    User.findOne({ email })
+        .exec()
         .then(user => {
             if (!user) {
                 return res.status(404).json({
@@ -89,7 +80,7 @@ router.post('/login', async (req, res) => {
                         if (err) throw err;
 
                         const userInfo = {
-                            id: user._id,
+                            _id: user._id,
                             name: user.name,
                             email: user.email,
                             created_at: user.created_at,
@@ -98,7 +89,7 @@ router.post('/login', async (req, res) => {
                         res.json({
                             success: true,
                             token,
-                            userInfo,
+                            user: userInfo,
                             message: 'User logged in',
                         });
                     }
@@ -106,6 +97,8 @@ router.post('/login', async (req, res) => {
             });
         })
         .catch(err => {
+            console.error(err);
+
             res.status(500).json({
                 success: false,
                 msg: 'Unable to log in user',
@@ -115,9 +108,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Signup user
-router.post('/signup', async (req, res) => {
-    const users = await usersCollection();
-
+router.post('/signup', (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -128,70 +119,68 @@ router.post('/signup', async (req, res) => {
     }
 
     // Check for existing user
-    await users.findOne({ email }).then(user => {
-        if (user)
-            return res.status(400).json({
-                success: false,
-                msg: 'User already exists',
-            });
+    User.findOne({ email })
+        .exec()
+        .then(user => {
+            if (user) {
+                return res.status(400).json({
+                    success: false,
+                    msg: 'User already exists',
+                });
+            }
 
-        const newUser = {
-            name,
-            email,
-            password,
-        };
-
-        // Create salt and hash
-        bcrypt.genSalt(10, (err, salt) => {
-            if (err) throw err;
-
-            bcrypt.hash(newUser.password, salt, async (err, hash) => {
+            // Create salt and hash
+            bcrypt.genSalt(10, (err, salt) => {
                 if (err) throw err;
-                newUser.password = hash;
 
-                await users
-                    .insertOne({
-                        name: newUser.name,
-                        email: newUser.email,
-                        password: newUser.password,
+                bcrypt.hash(password, salt, async (err, hash) => {
+                    if (err) throw err;
+
+                    const user = new User({
+                        _id: new mongoose.Types.ObjectId(),
+                        name,
+                        email,
+                        password: hash,
                         created_at: new Date(),
-                    })
-                    .then(user => {
-                        jwt.sign(
-                            { id: user.ops[0]._id },
-                            process.env.JWT_SECRET,
-                            { expiresIn: '7d' },
-                            (err, token) => {
-                                if (err) throw err;
-
-                                const userInfo = {
-                                    id: user.ops[0]._id,
-                                    name: user.ops[0].name,
-                                    email: user.ops[0].email,
-                                    created_at: user.ops[0].created_at,
-                                };
-
-                                res.status(201).json({
-                                    success: true,
-                                    token,
-                                    userInfo,
-                                    message: 'User signed up successfully',
-                                });
-                            }
-                        );
-                    })
-                    .catch(err => {
-                        console.error(err);
-
-                        res.status(500).json({
-                            success: false,
-                            msg: 'Something went wrong, please try again or contact support',
-                            err: err.msg,
-                        });
                     });
+
+                    user.save()
+                        .then(user => {
+                            jwt.sign(
+                                { id: user._id },
+                                process.env.JWT_SECRET,
+                                { expiresIn: '7d' },
+                                (err, token) => {
+                                    if (err) throw err;
+
+                                    const userInfo = {
+                                        _id: user._id,
+                                        name: user.name,
+                                        email: user.email,
+                                        created_at: user.created_at,
+                                    };
+
+                                    res.status(201).json({
+                                        success: true,
+                                        token,
+                                        userInfo,
+                                        message: 'User signed up successfully',
+                                    });
+                                }
+                            );
+                        })
+                        .catch(err => {
+                            console.error(err);
+
+                            res.status(500).json({
+                                success: false,
+                                msg: 'Something went wrong, please try again or contact support',
+                                err: err.msg,
+                            });
+                        });
+                });
             });
         });
-    });
 });
 
 module.exports = router;
