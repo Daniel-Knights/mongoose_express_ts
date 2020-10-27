@@ -1,14 +1,15 @@
 const express = require('express');
+const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
-const router = express.Router();
-
+// Fetch user data
 router.get('/user/:id', auth, (req, res) => {
-    const _id = req.params.id;
+    const _id = req.user.id;
 
     if (!_id) {
         res.status(400).json({
@@ -19,7 +20,7 @@ router.get('/user/:id', auth, (req, res) => {
 
     User.findById(_id)
         // All fields except password
-        .select('_id name email created_at')
+        .select('-__v -password')
         .then(user => {
             if (!user) {
                 return res.status(404).json({
@@ -54,6 +55,7 @@ router.post('/login', (req, res) => {
 
     // Check for existing user
     User.findOne({ email })
+        .select('-__v')
         .exec()
         .then(user => {
             if (!user) {
@@ -72,6 +74,8 @@ router.post('/login', (req, res) => {
                     });
                 }
 
+                delete user._doc.password;
+
                 jwt.sign(
                     { id: user._id },
                     process.env.JWT_SECRET,
@@ -79,17 +83,10 @@ router.post('/login', (req, res) => {
                     (err, token) => {
                         if (err) throw err;
 
-                        const userInfo = {
-                            _id: user._id,
-                            name: user.name,
-                            email: user.email,
-                            created_at: user.created_at,
-                        };
-
                         res.json({
                             success: true,
                             token,
-                            user: userInfo,
+                            user,
                             message: 'User logged in',
                         });
                     }
@@ -141,7 +138,6 @@ router.post('/signup', (req, res) => {
                         name,
                         email,
                         password: hash,
-                        created_at: new Date(),
                     });
 
                     user.save()
@@ -153,17 +149,13 @@ router.post('/signup', (req, res) => {
                                 (err, token) => {
                                     if (err) throw err;
 
-                                    const userInfo = {
-                                        _id: user._id,
-                                        name: user.name,
-                                        email: user.email,
-                                        created_at: user.created_at,
-                                    };
+                                    delete user._doc.password;
+                                    delete user._doc.__v;
 
                                     res.status(201).json({
                                         success: true,
                                         token,
-                                        userInfo,
+                                        user,
                                         message: 'User signed up successfully',
                                     });
                                 }

@@ -1,7 +1,6 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
-
 const router = express.Router();
+const nodemailer = require('nodemailer');
 
 router.post('/', (req, res) => {
     const htmlOutput = `
@@ -67,7 +66,7 @@ router.post('/', (req, res) => {
                                 font-size: 18px;" 
                             align="center"
                         >
-                            Phone: ${req.body.phone}
+                            Phone: ${req.body.phone || 'N/A'}
                         </td>
                     </tr>
                     <tr>

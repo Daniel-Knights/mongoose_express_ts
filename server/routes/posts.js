@@ -1,32 +1,32 @@
 const express = require('express');
+const router = express.Router();
 const mongoose = require('mongoose');
+
 const auth = require('../middleware/auth');
 const Post = require('../models/Post');
-
-const router = express.Router();
 
 // Get paginated posts
 router.get('/', async (req, res) => {
     const count = await Post.estimatedDocumentCount();
-    const pagination = 5;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
     const page = req.query.page ? parseInt(req.query.page) : 1;
 
     Post
         // Empty object gets all, but could set 'name: "whatever"' for example
         .find()
-        .skip((page - 1) * pagination)
-        .limit(pagination)
+        .skip((page - 1) * limit)
+        .limit(limit)
         .sort({ created_at: -1 })
-        .select('_id text created_at')
+        .select('-__v')
         .exec()
         .then(response => {
-            // Create pagination object
+            // Create limit object
             const paginated = {
                 total: count,
                 data: response,
                 current_page: page,
-                last_page: Math.ceil(count / pagination),
-                per_page: req.query.pagination,
+                last_page: Math.ceil(count / limit),
+                per_page: limit,
             };
 
             res.json({
@@ -69,13 +69,13 @@ router.get('/:id', (req, res) => {
 
             const url = req.protocol + '://' + req.get('host') + '/api/posts';
 
+            delete post._doc.__v;
+
             res.status(200).json({
                 success: true,
                 msg: 'Fetched post',
                 post: {
-                    _id: post._id,
-                    text: post.text,
-                    created_at: post.created_at,
+                    ...post._doc,
                     request: { method: 'GET', url },
                 },
             });
@@ -92,7 +92,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Add posts
-router.post('/', auth, (req, res) => {
+router.post('/', (req, res) => {
     if (!req.body.text) {
         return res.status(400).json({
             success: false,
@@ -103,20 +103,19 @@ router.post('/', auth, (req, res) => {
     const post = new Post({
         _id: new mongoose.Types.ObjectId(),
         text: req.body.text,
-        created_at: new Date(),
     });
 
     post.save()
         .then(post => {
             const url = req.protocol + '://' + req.get('host') + '/api/posts/' + post._id;
 
+            delete post._doc.__v;
+
             res.status(201).json({
                 success: true,
                 msg: 'Post created',
                 post: {
-                    _id: post._id,
-                    text: post.text,
-                    created_at: post.created_at,
+                    ...post._doc,
                     request: { method: 'GET', url },
                 },
             });

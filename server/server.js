@@ -2,12 +2,11 @@ require('dotenv').config();
 require('./config/db');
 
 const express = require('express');
+const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
 const compression = require('compression');
 const helmet = require('helmet');
-
-const app = express();
 
 // Middleware
 app.use(express.urlencoded({ extended: false }));
