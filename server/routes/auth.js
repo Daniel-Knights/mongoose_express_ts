@@ -120,57 +120,53 @@ router.post('/signup', (req, res) => {
         .exec()
         .then(user => {
             if (user) {
-                return res.status(400).json({
+                return res.status(409).json({
                     success: false,
                     msg: 'User already exists',
                 });
             }
 
             // Create salt and hash
-            bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(password, 10, (err, hash) => {
                 if (err) throw err;
 
-                bcrypt.hash(password, salt, async (err, hash) => {
-                    if (err) throw err;
-
-                    const user = new User({
-                        _id: new mongoose.Types.ObjectId(),
-                        name,
-                        email,
-                        password: hash,
-                    });
-
-                    user.save()
-                        .then(user => {
-                            jwt.sign(
-                                { id: user._id },
-                                process.env.JWT_SECRET,
-                                { expiresIn: '7d' },
-                                (err, token) => {
-                                    if (err) throw err;
-
-                                    delete user._doc.password;
-                                    delete user._doc.__v;
-
-                                    res.status(201).json({
-                                        success: true,
-                                        token,
-                                        user,
-                                        message: 'User signed up successfully',
-                                    });
-                                }
-                            );
-                        })
-                        .catch(err => {
-                            console.error(err);
-
-                            res.status(500).json({
-                                success: false,
-                                msg: 'Something went wrong, please try again or contact support',
-                                err: err.msg,
-                            });
-                        });
+                const user = new User({
+                    _id: new mongoose.Types.ObjectId(),
+                    name,
+                    email,
+                    password: hash,
                 });
+
+                user.save()
+                    .then(user => {
+                        jwt.sign(
+                            { id: user._id },
+                            process.env.JWT_SECRET,
+                            { expiresIn: '7d' },
+                            (err, token) => {
+                                if (err) throw err;
+
+                                delete user._doc.password;
+                                delete user._doc.__v;
+
+                                res.status(201).json({
+                                    success: true,
+                                    token,
+                                    user,
+                                    message: 'User signed up successfully',
+                                });
+                            }
+                        );
+                    })
+                    .catch(err => {
+                        console.error(err);
+
+                        res.status(500).json({
+                            success: false,
+                            msg: 'Something went wrong, please try again or contact support',
+                            err: err.msg,
+                        });
+                    });
             });
         });
 });
