@@ -18,7 +18,7 @@ exports.get_all = async (req, res) => {
         .populate('user', '-__v -password -posts')
         .select('-__v')
         .exec()
-        .then((response) => {
+        .then(response => {
             // Create limit object
             const paginated = {
                 total: count,
@@ -34,7 +34,7 @@ exports.get_all = async (req, res) => {
                 paginated,
             });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error(err);
 
             return res.status(500).json({
@@ -60,7 +60,7 @@ exports.get_single = (req, res) => {
         .populate('user', '-__v -password -posts')
         .select('-__v')
         .exec()
-        .then((post) => {
+        .then(post => {
             if (!post) {
                 return res.status(404).json({
                     success: false,
@@ -80,7 +80,7 @@ exports.get_single = (req, res) => {
                 },
             });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error(err);
 
             res.status(500).json({
@@ -113,7 +113,7 @@ exports.create_post = (req, res) => {
         .exec()
         .then(() => {
             post.save()
-                .then((post) => {
+                .then(post => {
                     const url = req.protocol + '://' + req.get('host') + '/api/posts/' + post._id;
 
                     delete post._doc.__v;
@@ -129,7 +129,7 @@ exports.create_post = (req, res) => {
                         });
                     });
                 })
-                .catch((err) => {
+                .catch(err => {
                     console.error('Save post failed: ', err);
 
                     // Remove associated post from the users' document
@@ -142,7 +142,7 @@ exports.create_post = (req, res) => {
                     });
                 });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error('Update users posts failed: ', err);
 
             res.status(500).json({
@@ -166,7 +166,7 @@ exports.delete_post = (req, res) => {
 
     Post.deleteOne({ _id })
         .exec()
-        .then((result) => {
+        .then(result => {
             if (!result.deletedCount)
                 return res.status(404).json({
                     success: false,
@@ -182,7 +182,7 @@ exports.delete_post = (req, res) => {
                 request: { method: 'GET', url },
             });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error(err);
 
             res.status(500).json({

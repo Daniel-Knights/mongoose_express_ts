@@ -20,7 +20,7 @@ exports.fetch_user = (req, res) => {
         .populate('posts', '-__v -user')
         // All fields except '__v' and 'password'
         .select('-__v -password')
-        .then((user) => {
+        .then(user => {
             if (!user) {
                 return res.status(404).json({
                     success: false,
@@ -30,7 +30,7 @@ exports.fetch_user = (req, res) => {
 
             res.status(200).json({ success: true, user });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error(err);
 
             res.status(500).json({
@@ -56,7 +56,7 @@ exports.login = (req, res) => {
     User.findOne({ email })
         .select('-__v')
         .exec()
-        .then((user) => {
+        .then(user => {
             if (!user) {
                 return res.status(404).json({
                     success: false,
@@ -65,7 +65,7 @@ exports.login = (req, res) => {
             }
 
             // Validate password
-            bcrypt.compare(password, user.password).then((isMatch) => {
+            bcrypt.compare(password, user.password).then(isMatch => {
                 if (!isMatch) {
                     return res.status(400).json({
                         success: false,
@@ -94,7 +94,7 @@ exports.login = (req, res) => {
                 );
             });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error(err);
 
             res.status(500).json({
@@ -119,7 +119,7 @@ exports.signup = (req, res) => {
     // Check for existing user
     User.findOne({ email })
         .exec()
-        .then((user) => {
+        .then(user => {
             if (user) {
                 return res.status(409).json({
                     success: false,
@@ -139,7 +139,7 @@ exports.signup = (req, res) => {
                 });
 
                 user.save()
-                    .then((user) => {
+                    .then(user => {
                         jwt.sign(
                             { id: user._id },
                             process.env.JWT_SECRET,
@@ -159,7 +159,7 @@ exports.signup = (req, res) => {
                             }
                         );
                     })
-                    .catch((err) => {
+                    .catch(err => {
                         console.error('Save user failed: ', err);
 
                         res.status(500).json({
@@ -170,7 +170,7 @@ exports.signup = (req, res) => {
                     });
             });
         })
-        .catch((err) => {
+        .catch(err => {
             console.error('Find user failed: ', err);
 
             res.status(500).json({
