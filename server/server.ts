@@ -1,12 +1,15 @@
+import type { App, Req, Res, Next } from './typings/types';
+
 require('dotenv').config();
 require('./config/db');
 
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const morgan = require('morgan');
-const compression = require('compression');
-const helmet = require('helmet');
+import express = require('express');
+import cors = require('cors');
+import morgan = require('morgan');
+import compression = require('compression');
+import helmet = require('helmet');
+
+const app: App = express();
 
 // Middleware
 app.use(express.urlencoded({ extended: false }));
@@ -28,9 +31,9 @@ console.log('JWT Secret:', hexStr);
 // Routes
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/email/direct', require('./routes/email/direct'));
+app.use('/api/email', require('./routes/email'));
 
-// app.use(function forceLiveDomain(req, res, next) {
+// app.use(function forceLiveDomain(req: Req, res: Res, next: Next) {
 //     const host = req.get('Host');
 
 //     if (host.includes('herokuapp')) {
@@ -43,13 +46,13 @@ app.use('/api/email/direct', require('./routes/email/direct'));
 // Handle production
 if (process.env.NODE_ENV === 'production') {
     // Static folder
-    app.use(express.static(__dirname + '/public/'));
+    app.use(express.static(__dirname));
 
     // Handle SPA
-    app.get(/.*/, (req, res) => res.sendFile(__dirname + '/public/index.html'));
+    app.get(/.*/, (req: Req, res: Res) => res.sendFile(__dirname + '/index.html'));
 }
 
-// app.use(function forceSecureDomain(req, res, next) {
+// app.use(function forceSecureDomain(req: Req, res: Res, next: Next) {
 //     res.redirect(301, 'https://www.example.com' + req.originalUrl);
 
 //     next();

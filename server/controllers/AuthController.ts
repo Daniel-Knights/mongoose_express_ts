@@ -1,12 +1,13 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import type { UserDoc, Req, Res } from '../typings/types';
+import mongoose = require('mongoose');
+import bcrypt = require('bcryptjs');
+import jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
-exports.fetch_user = (req, res) => {
+exports.fetch_user = (req: Req, res: Res) => {
     // Extract ID from auth token
-    const _id = req.user.id;
+    const _id = req.user!.id;
 
     if (!_id) {
         res.status(400).json({
@@ -20,7 +21,7 @@ exports.fetch_user = (req, res) => {
         .populate('posts', '-__v -user')
         // All fields except '__v' and 'password'
         .select('-__v -password')
-        .then(user => {
+        .then((user: UserDoc) => {
             if (!user) {
                 return res.status(404).json({
                     success: false,
@@ -28,9 +29,13 @@ exports.fetch_user = (req, res) => {
                 });
             }
 
+            if (user._doc.posts!.length === 0) {
+                delete user._doc.posts;
+            }
+
             res.status(200).json({ success: true, user });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error(err);
 
             res.status(500).json({
@@ -42,7 +47,7 @@ exports.fetch_user = (req, res) => {
 };
 
 // Login user
-exports.login = (req, res) => {
+exports.login = (req: Req, res: Res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -56,7 +61,7 @@ exports.login = (req, res) => {
     User.findOne({ email })
         .select('-__v')
         .exec()
-        .then(user => {
+        .then((user: UserDoc) => {
             if (!user) {
                 return res.status(404).json({
                     success: false,
@@ -65,7 +70,7 @@ exports.login = (req, res) => {
             }
 
             // Validate password
-            bcrypt.compare(password, user.password).then(isMatch => {
+            bcrypt.compare(password, user.password!).then(isMatch => {
                 if (!isMatch) {
                     return res.status(400).json({
                         success: false,
@@ -76,10 +81,14 @@ exports.login = (req, res) => {
                 // Prevent password field from being returned
                 delete user._doc.password;
 
+                if (user._doc.posts!.length === 0) {
+                    delete user._doc.posts;
+                }
+
                 // Sign token
                 jwt.sign(
                     { id: user._id },
-                    process.env.JWT_SECRET,
+                    process.env.JWT_SECRET!,
                     { expiresIn: '7d' },
                     (err, token) => {
                         if (err) throw err;
@@ -94,7 +103,7 @@ exports.login = (req, res) => {
                 );
             });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error(err);
 
             res.status(500).json({
@@ -106,7 +115,7 @@ exports.login = (req, res) => {
 };
 
 // Signup user
-exports.signup = (req, res) => {
+exports.signup = (req: Req, res: Res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -119,7 +128,7 @@ exports.signup = (req, res) => {
     // Check for existing user
     User.findOne({ email })
         .exec()
-        .then(user => {
+        .then((user: UserDoc) => {
             if (user) {
                 return res.status(409).json({
                     success: false,
@@ -131,7 +140,7 @@ exports.signup = (req, res) => {
             bcrypt.hash(password, 10, (err, hash) => {
                 if (err) throw err;
 
-                const user = new User({
+                const user: UserDoc = new User({
                     _id: new mongoose.Types.ObjectId(),
                     name,
                     email,
@@ -139,16 +148,20 @@ exports.signup = (req, res) => {
                 });
 
                 user.save()
-                    .then(user => {
+                    .then((user: UserDoc) => {
                         jwt.sign(
                             { id: user._id },
-                            process.env.JWT_SECRET,
+                            process.env.JWT_SECRET!,
                             { expiresIn: '7d' },
                             (err, token) => {
                                 if (err) throw err;
 
                                 delete user._doc.password;
                                 delete user._doc.__v;
+
+                                if (user._doc.posts!.length === 0) {
+                                    delete user._doc.posts;
+                                }
 
                                 res.status(201).json({
                                     success: true,
@@ -159,18 +172,19 @@ exports.signup = (req, res) => {
                             }
                         );
                     })
-                    .catch(err => {
+                    .catch((err: Error) => {
                         console.error('Save user failed: ', err);
 
                         res.status(500).json({
                             success: false,
-                            msg: 'Something went wrong, please try again or contact support',
+                            msg:
+                                'Something went wrong, please try again or contact support',
                             err: err.message,
                         });
                     });
             });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error('Find user failed: ', err);
 
             res.status(500).json({

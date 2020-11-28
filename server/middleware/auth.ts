@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken');
+import type { UserDoc, Req, Res, Next } from '../typings/types';
+import jwt = require('jsonwebtoken');
 
-const auth = (req, res, next) => {
+const auth = (req: Req, res: Res, next: Next) => {
     const token = req.header('x-auth-token');
 
     // Check for token
@@ -12,10 +13,10 @@ const auth = (req, res, next) => {
 
     try {
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
         // Add user from payload
-        req.user = decoded;
+        req.user = decoded as UserDoc;
 
         next();
     } catch (err) {

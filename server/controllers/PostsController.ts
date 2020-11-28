@@ -1,13 +1,14 @@
-const mongoose = require('mongoose');
+import type { Req, Res, PostDoc, Bulk } from '../typings/types';
+import mongoose = require('mongoose');
 
 const Post = require('../models/Post');
 const User = require('../models/User');
 
 // Get all posts
-exports.get_all = async (req, res) => {
+exports.get_all = async (req: Req, res: Res) => {
     const count = await Post.estimatedDocumentCount();
-    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
-    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 100;
+    const page = req.query.page ? Number(req.query.page) : 1;
 
     Post
         // Empty argument returns all
@@ -18,7 +19,7 @@ exports.get_all = async (req, res) => {
         .populate('user', '-__v -password -posts')
         .select('-__v')
         .exec()
-        .then(response => {
+        .then((response: Res) => {
             // Create limit object
             const paginated = {
                 total: count,
@@ -34,7 +35,7 @@ exports.get_all = async (req, res) => {
                 paginated,
             });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error(err);
 
             return res.status(500).json({
@@ -46,7 +47,7 @@ exports.get_all = async (req, res) => {
 };
 
 // Get single post
-exports.get_single = (req, res) => {
+exports.get_single = (req: Req, res: Res) => {
     const _id = req.params.id;
 
     if (!_id) {
@@ -60,7 +61,7 @@ exports.get_single = (req, res) => {
         .populate('user', '-__v -password -posts')
         .select('-__v')
         .exec()
-        .then(post => {
+        .then((post: PostDoc) => {
             if (!post) {
                 return res.status(404).json({
                     success: false,
@@ -80,7 +81,7 @@ exports.get_single = (req, res) => {
                 },
             });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error(err);
 
             res.status(500).json({
@@ -92,7 +93,7 @@ exports.get_single = (req, res) => {
 };
 
 // Create post
-exports.create_post = (req, res) => {
+exports.create_post = (req: Req, res: Res) => {
     const { text, user_id } = req.body;
 
     if (!text) {
@@ -102,7 +103,7 @@ exports.create_post = (req, res) => {
         });
     }
 
-    const post = new Post({
+    const post: PostDoc = new Post({
         _id: new mongoose.Types.ObjectId(),
         text: text,
         user: user_id,
@@ -113,7 +114,7 @@ exports.create_post = (req, res) => {
         .exec()
         .then(() => {
             post.save()
-                .then(post => {
+                .then((post: PostDoc) => {
                     const url = req.protocol + '://' + req.get('host') + '/api/posts/' + post._id;
 
                     delete post._doc.__v;
@@ -129,7 +130,7 @@ exports.create_post = (req, res) => {
                         });
                     });
                 })
-                .catch(err => {
+                .catch((err: Error) => {
                     console.error('Save post failed: ', err);
 
                     // Remove associated post from the users' document
@@ -142,7 +143,7 @@ exports.create_post = (req, res) => {
                     });
                 });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error('Update users posts failed: ', err);
 
             res.status(500).json({
@@ -154,7 +155,7 @@ exports.create_post = (req, res) => {
 };
 
 // Delete post
-exports.delete_post = (req, res) => {
+exports.delete_post = (req: Req, res: Res) => {
     const _id = req.params.id;
 
     if (!_id) {
@@ -166,7 +167,7 @@ exports.delete_post = (req, res) => {
 
     Post.deleteOne({ _id })
         .exec()
-        .then(result => {
+        .then((result: Bulk) => {
             if (!result.deletedCount)
                 return res.status(404).json({
                     success: false,
@@ -182,7 +183,7 @@ exports.delete_post = (req, res) => {
                 request: { method: 'GET', url },
             });
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error(err);
 
             res.status(500).json({

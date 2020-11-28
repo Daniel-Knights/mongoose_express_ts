@@ -1,0 +1,12 @@
+{
+    "include": ["**/*.ts"],
+    "compilerOptions": {
+        "target": "ES6",
+        "module": "commonjs",
+        "rootDir": "./server",
+        "outDir": "./server/public",
+        "esModuleInterop": true,
+        "pretty": true,
+        "strict": true
+    }
+}

@@ -1,4 +1,4 @@
-**A Robust Node/Express/MongoDB/Mongoose Boilerplate**
+**A Robust Node/Express/MongoDB/Mongoose/TypeScript Boilerplate**
 
 Functionality:
 
