@@ -1,9 +1,14 @@
-import type { UserDoc, Req, Res } from '../typings/types';
+import type { NewUser, UserDoc, Req, Res } from '../typings/types';
 import mongoose = require('mongoose');
 import bcrypt = require('bcryptjs');
 import jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
+
+// Allow type inference for new User
+const newUser = (user: NewUser) => {
+    return new User(user);
+};
 
 exports.fetch_user = (req: Req, res: Res) => {
     // Extract ID from auth token
@@ -140,7 +145,7 @@ exports.signup = (req: Req, res: Res) => {
             bcrypt.hash(password, 10, (err, hash) => {
                 if (err) throw err;
 
-                const user: UserDoc = new User({
+                const user: UserDoc = newUser({
                     _id: new mongoose.Types.ObjectId(),
                     name,
                     email,

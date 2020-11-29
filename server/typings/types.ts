@@ -11,16 +11,24 @@ export interface Req extends Request {
     user?: UserDoc;
 }
 
-export interface UserDoc extends Document {
+export interface NewUser {
+    _id: any;
     name: string;
     email: string;
     password?: string;
     posts?: PostDoc[];
+}
+
+export interface NewPost {
+    _id: any;
+    user: Types.ObjectId;
+    text: string;
+}
+
+export interface UserDoc extends NewUser, Document {
     _doc: UserDoc;
 }
 
-export interface PostDoc extends Document {
-    user: Types.ObjectId;
-    text: string;
+export interface PostDoc extends NewPost, Document {
     _doc: PostDoc;
 }

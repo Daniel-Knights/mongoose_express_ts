@@ -1,8 +1,13 @@
-import type { Req, Res, PostDoc, Bulk } from '../typings/types';
+import type { Req, Res, Bulk, PostDoc, NewPost } from '../typings/types';
 import mongoose = require('mongoose');
 
 const Post = require('../models/Post');
 const User = require('../models/User');
+
+// Allow type inference for new Post
+const newPost = (post: NewPost) => {
+    return new Post(post);
+};
 
 // Get all posts
 exports.get_all = async (req: Req, res: Res) => {
@@ -103,7 +108,7 @@ exports.create_post = (req: Req, res: Res) => {
         });
     }
 
-    const post: PostDoc = new Post({
+    const post: PostDoc = newPost({
         _id: new mongoose.Types.ObjectId(),
         text: text,
         user: user_id,
