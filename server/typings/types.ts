@@ -2,13 +2,14 @@ import type { Document, Types } from 'mongoose';
 import type { Application, NextFunction, Request, Response } from 'express';
 import { BulkWriteOpResultObject } from 'mongodb';
 
-export interface App extends Application {}
+export type App = Application;
+export type Res = Response;
+export type Next = NextFunction;
+export type Bulk = BulkWriteOpResultObject;
+
 export interface Req extends Request {
     user?: UserDoc;
 }
-export interface Res extends Response {}
-export interface Next extends NextFunction {}
-export interface Bulk extends BulkWriteOpResultObject {}
 
 export interface UserDoc extends Document {
     name: string;
