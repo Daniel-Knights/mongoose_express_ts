@@ -115,7 +115,8 @@ exports.create_post = (req: Req, res: Res) => {
         .then(() => {
             post.save()
                 .then((post: PostDoc) => {
-                    const url = req.protocol + '://' + req.get('host') + '/api/posts/' + post._id;
+                    const url =
+                        req.protocol + '://' + req.get('host') + '/api/posts/' + post._id;
 
                     delete post._doc.__v;
 

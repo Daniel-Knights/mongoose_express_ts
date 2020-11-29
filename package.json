@@ -2,10 +2,10 @@
     "name": "mongoose_express",
     "version": "1.0.0",
     "description": "Backend boilerplate using Express and MongoDB with Mongoose and TypeScript",
-    "main": "server/public/server.js",
+    "main": "server/server.ts",
     "scripts": {
         "start": "node server/public/server.js",
-        "serve": "npm run serve --prefix client"
+        "build": "tsc"
     },
     "author": "Daniel Knights",
     "license": "MIT",
