@@ -1,6 +1,6 @@
 import type { Document, Types } from 'mongoose';
 import type { Application, NextFunction, Request, Response } from 'express';
-import { BulkWriteOpResultObject } from 'mongodb';
+import type { BulkWriteOpResultObject } from 'mongodb';
 
 export type App = Application;
 export type Res = Response;
